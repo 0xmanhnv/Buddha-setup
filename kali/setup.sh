@@ -45,6 +45,7 @@ gotools["nuclei"]="go install -v github.com/projectdiscovery/nuclei/v3/cmd/nucle
 gotools["anew"]="go install -v github.com/tomnomnom/anew@latest"
 gotools["subfinder"]="go install -v github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest"
 gotools["gau"]="go install -v github.com/lc/gau/v2/cmd/gau@latest"
+gotools["gobuster"] = "go install github.com/OJ/gobuster/v3@latest"
 
 # Declaring repositories and their paths
 declare -A repos
@@ -79,8 +80,13 @@ function install_vscode() {
 
 function install_sliver() {
 	# Install Sliver C2
-	printf "${bblue} Running: Installing Sliver tools ${reset}\n\n"
-	eval $SUDO curl https://sliver.sh/install | sudo bash
+
+	if command -v sliver > /dev/null 2>&1; then
+		printf "${yellow} Sliver installed ! ${reset}\n"
+	else
+		printf "${bblue} Running: Installing Sliver tools ${reset}\n\n"
+		eval $SUDO curl https://sliver.sh/install | sudo bash
+	fi
 }
 
 
@@ -153,20 +159,26 @@ else
 
 	eval $SUDO ln -sf /usr/local/go/bin/go /usr/local/bin/
 	#rm -rf $version*
-	export GOROOT=/usr/local/go
-	export GOPATH=${HOME}/go
-	export PATH=$GOPATH/bin:$GOROOT/bin:${HOME}/.local/bin:$PATH
+	# export GOROOT=/usr/local/go
+	# export GOPATH=${HOME}/go
+	# export PATH=$GOPATH/bin:$GOROOT/bin:${HOME}/.local/bin:$PATH
 fi
 
+# Export golang vars
+if [[ $(cat ~/"${profile_shell}" | grep -o 'export GOROOT') == "export GOROOT" ]] || [[ $(cat ~/"${profile_shell}" | grep -o 'export GOPATH') == "export GOPATH" ]] || [[ $(cat ~/"${profile_shell}" | grep -o 'export PATH.*GOROOT') == 'export PATH=$GOPATH/bin:$GOROOT' ]]; then
+	printf "${yellow} Golang vars ! ${reset}\n"
+else
+printf "${bblue} Running: Golang vars ${reset}\n\n"
 cat <<EOF >>~/"${profile_shell}"
 # Golang vars
 export GOROOT=/usr/local/go
 export GOPATH=\$HOME/go
 export PATH=\$GOPATH/bin:\$GOROOT/bin:\$HOME/.local/bin:\$PATH
 EOF
+source ~/"${profile_shell}"
+fi
 
 printf "${bblue} Running: Installing requirements ${reset}\n\n"
-
 mkdir -p ~/.gf
 mkdir -p ~/.config/notify/
 mkdir -p ~/.config/amass/
