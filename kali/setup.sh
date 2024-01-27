@@ -20,6 +20,7 @@ reset='\033[0m'
 
 # Variables
 profile_shell=.profile
+tools_folder="$HOME/Tools"
 
 
 function banner() {
@@ -45,7 +46,7 @@ gotools["nuclei"]="go install -v github.com/projectdiscovery/nuclei/v3/cmd/nucle
 gotools["anew"]="go install -v github.com/tomnomnom/anew@latest"
 gotools["subfinder"]="go install -v github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest"
 gotools["gau"]="go install -v github.com/lc/gau/v2/cmd/gau@latest"
-gotools["gobuster"] = "go install github.com/OJ/gobuster/v3@latest"
+gotools["gobuster"]="go install github.com/OJ/gobuster/v3@latest"
 
 # Declaring repositories and their paths
 declare -A repos
@@ -57,7 +58,8 @@ repos["Gf-Patterns"]="1ndianl33t/Gf-Patterns"
 
 install_apt() {
 	eval $SUDO apt update -y $DEBUG_STD
-	eval $SUDO apt-get install -y build-essential mingw-w64 binutils-mingw-w64 g++-mingw-w64
+	eval $SUDO DEBIAN_FRONTEND="noninteractive" apt-get install -y build-essential mingw-w64 binutils-mingw-w64 g++-mingw-w64
+	eval $SUDO DEBIAN_FRONTEND="noninteractive" apt-get install -y openjdk-11-jdk openjdk-11-jre
 	# eval $SUDO DEBIAN_FRONTEND="noninteractive" apt install chromium-browser -y $DEBUG_STD
 	eval $SUDO DEBIAN_FRONTEND="noninteractive" apt install chromium -y $DEBUG_STD
 	eval $SUDO DEBIAN_FRONTEND="noninteractive" apt install python3 python3-pip python3-virtualenv build-essential gcc cmake ruby whois git curl libpcap-dev wget zip python3-dev pv dnsutils libssl-dev libffi-dev libxml2-dev libxslt1-dev zlib1g-dev nmap jq apt-transport-https lynx medusa xvfb libxml2-utils procps bsdmainutils libdata-hexdump-perl -y $DEBUG_STD
@@ -113,6 +115,32 @@ function install_tools() {
 		fi
 	done
 ###############################################################################################################
+	printf "${bblue} Running: Installing neo4j neo4j_4.4.29_all.deb tools (${#gotools[@]})${reset}\n\n"
+	if [ -f "/usr/bin/neo4j" ]; then
+		printf "${yellow} Neo4j installed ! ${reset}\n"
+	else
+		eval wget -O- https://debian.neo4j.com/neotechnology.gpg.key | gpg --dearmor > neo4j.gpg
+		eval $SUDO mv neo4j.gpg /etc/apt/trusted.gpg.d/
+		eval $SUDO chown root:root /etc/apt/trusted.gpg.d/neo4j.gpg
+		eval $SUDO chmod ugo+r /etc/apt/trusted.gpg.d/neo4j.gpg
+		eval $SUDO chmod go-w /etc/apt/trusted.gpg.d/neo4j.gpg
+		echo 'deb https://debian.neo4j.com stable 4.4' | sudo tee /etc/apt/sources.list.d/neo4j.list
+		eval $SUDO apt update -y $DEBUG_STD
+		eval $SUDO apt-get install neo4j
+	fi
+###############################################################################################################
+	printf "${bblue} Running: Installing BloodHound neo4j_4.4.29_all.deb tools (${#gotools[@]})${reset}\n\n"
+	if [ -d "$tools_folder/BloodHound" ]; then
+		printf "${yellow} BloodHound installed ! ${reset}\n"
+	else
+		eval $SUDO rm -rf "$tools_folder/BloodHound"
+		eval wget -N -c https://github.com/BloodHoundAD/BloodHound/releases/download/v4.3.1/BloodHound-linux-x64.zip -O /tmp/BloodHound-linux-x64.zip
+		eval unzip /tmp/BloodHound-linux-x64.zip -d /tmp
+		eval $SUDO mv /tmp/BloodHound-linux-x64 "$tools_folder/BloodHound"
+		eval rm -f /tmp/BloodHound-linux-x64.zip $DEBUG_STD
+	fi
+
+	
 }
 
 ###############################################################################################################
@@ -120,8 +148,15 @@ function install_tools() {
 ###############################################################################################################
 
 banner
-printf "\n${bgreen} Buddha installer/updater script ${reset}\n\n"
 
+if [ -d "$tools_folder" ]; then
+	printf "\n${bgreen} Tools folder is exists ${reset}\n\n"
+else
+	printf "\n${bgreen} Create Tools Folder ${reset}\n\n"
+	mkdir -p $tools_folder
+fi
+
+printf "\n${bgreen} Buddha installer/updater script ${reset}\n\n"
 printf "${yellow} This may take time. So, go grab a coffee! ${reset}\n\n"
 
 if [[ $(id -u | grep -o '^0$') == "0" ]]; then
@@ -173,10 +208,10 @@ cat <<EOF >>~/"${profile_shell}"
 # Golang vars
 export GOROOT=/usr/local/go
 export GOPATH=\$HOME/go
-export PATH=\$GOPATH/bin:\$GOROOT/bin:\$HOME/.local/bin:\$PATH
+export PATH=\$GOPATH/bin:\$GOROOT/bin:\$HOME/go/bin:\$HOME/.local/bin:\$PATH
 EOF
-source ~/"${profile_shell}"
 fi
+source "$HOME/$profile_shell"
 
 printf "${bblue} Running: Installing requirements ${reset}\n\n"
 mkdir -p ~/.gf
