@@ -91,7 +91,6 @@ function install_sliver() {
 	fi
 }
 
-
 function install_tools() {
 ###############################################################################################################
 	printf "${bblue} Running: Installing Golang tools (${#gotools[@]})${reset}\n\n"
@@ -139,8 +138,13 @@ function install_tools() {
 		eval $SUDO mv /tmp/BloodHound-linux-x64 "$tools_folder/BloodHound"
 		eval rm -f /tmp/BloodHound-linux-x64.zip $DEBUG_STD
 	fi
-
-	
+###############################################################################################################
+	printf "${bblue} Running: Installing Seclists tools (${#gotools[@]})${reset}\n\n"
+	if [ -d "/usr/share/seclists" ]; then
+		printf "${yellow} Seclists installed ! ${reset}\n"
+	else
+	eval $SUDO DEBIAN_FRONTEND="noninteractive" apt install -y seclists
+	fi
 }
 
 ###############################################################################################################
@@ -231,6 +235,15 @@ install_tools
 install_vscode
 install_sliver
 
+if [[ $(cat "$HOME/.zshrc" | grep -o '$HOME/.profile') == "$HOME/.profile" ]]; then
+	printf "${yellow} Profile included ! ${reset}\n"
+else
+printf "${bblue} Running: Profile include ${reset}\n\n"
+cat <<EOF >>"$HOME/.zshrc"
+# Include profile
+. ~/.profile
+EOF
+fi
 
 printf "${bgreen} Finished!${reset}\n\n"
 printf "\n\n${bgreen}#######################################################################${reset}\n"
